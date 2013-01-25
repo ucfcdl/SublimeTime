@@ -19,7 +19,6 @@ def find(needle_start, needle_regex, haystack):
 
 class UnixTimeToDateStrCommand(sublime_plugin.TextCommand):
 	def run(self, edit):
-		print "uttdsc"
 		regex = re.compile(st_settings.get('unix_timestamp_regex'))
 		user_selections = [s for s in self.view.sel() if not s.empty()]
 
@@ -28,7 +27,7 @@ class UnixTimeToDateStrCommand(sublime_plugin.TextCommand):
 			user_selections = [sublime.Region(0, self.view.size())]
 
 		for user_selection in reversed(user_selections):
-			matches = find(user_selection.a, regex, self.view.substr(user_selection))
+			matches = find(user_selection.begin(), regex, self.view.substr(user_selection))
 			if matches != None:
 				for matched_region in matches:
 					unix_time_str = self.view.substr(matched_region)
@@ -38,7 +37,6 @@ class UnixTimeToDateStrCommand(sublime_plugin.TextCommand):
 
 class DateStrToUnixTimeCommand(sublime_plugin.TextCommand):
 	def run(self, edit):
-		print "dstutc"
 		regex = re.compile(st_settings.get('date_string_regex'))
 		user_selections = [s for s in self.view.sel() if not s.empty()]
 
@@ -47,10 +45,9 @@ class DateStrToUnixTimeCommand(sublime_plugin.TextCommand):
 			user_selections = [sublime.Region(0, self.view.size())]
 
 		for user_selection in reversed(user_selections):
-			matches = find(user_selection.a, regex, self.view.substr(user_selection))
+			matches = find(user_selection.begin(), regex, self.view.substr(user_selection))
 			if matches != None:
 				for matched_region in matches:
-					print matched_region
 					time_str = self.view.substr(matched_region)
 					unix_time_str = str(int(time.mktime(datetime.datetime.strptime(time_str, st_settings.get('date_string_format')).timetuple())))
 					self.view.replace(edit, matched_region, unix_time_str)
