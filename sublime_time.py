@@ -1,26 +1,52 @@
-import sublime, sublime_plugin
+import sublime
+import sublime_plugin
 import datetime
 import time
+import re
+
+st_settings = sublime.load_settings('sublime_time.sublime-settings')
+
 
 class UnixTimeToDateStrCommand(sublime_plugin.TextCommand):
-	regex = '[0-9]{9,10}'
-
 	def run(self, edit):
-		region = self.view.find(UnixTimeToDateStrCommand.regex, 0)
-		while(region is not None):
-			unix_time_str = self.view.substr(region)
-			time_str = datetime.datetime.fromtimestamp(int(unix_time_str)).strftime('%Y-%m-%d %I:%M:%S %p')
-			self.view.replace(edit, region, time_str)
-			region = self.view.find(UnixTimeToDateStrCommand.regex, 0)
+		regex = re.compile(st_settings.get('unix_timestamp_regex'))
+		user_selections = [s for s in self.view.sel() if not s.empty()]
 
-class DateStrToUnixTimeCommand(sublime_plugin.TextCommand):
-	regex = '[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} (A|P|a|p)(M|m)'
+		# Filter whole document if there's no non-empty selection
+		if len(user_selections) == 0:
+			user_selections = [sublime.Region(0, self.view.size())]
 
-	def run(self, edit):
-		#2013-01-24 02:28:42 PM
-		region = self.view.find(DateStrToUnixTimeCommand.regex, 0)
-		while(region is not None):
-			time_str = self.view.substr(region)
-			unix_time_str = str(int(time.mktime(datetime.datetime.strptime(time_str, '%Y-%m-%d %I:%M:%S %p').timetuple())))
-			self.view.replace(edit, region, unix_time_str)
-			region = self.view.find(DateStrToUnixTimeCommand.regex, 0)
+		for user_selection in reversed(user_selections):
+			matches = self.find(user_selection.a, regex, self.view.substr(user_selection))
+			if matches != None:
+				for matched_region in matches:
+					unix_time_str = self.view.substr(matched_region)
+					time_str = datetime.datetime.fromtimestamp(int(unix_time_str)).strftime(st_settings.get('date_string_format'))
+					self.view.replace(edit, matched_region, time_str)
+
+	class DateStrToUnixTimeCommand(sublime_plugin.TextCommand):
+		def run(self, edit):
+			regex = re.compile(st_settings.get('date_string_regex'))
+			user_selections = [s for s in self.view.sel() if not s.empty()]
+
+			# Filter whole document if there's no non-empty selection
+			if len(user_selections) == 0:
+				user_selections = [sublime.Region(0, self.view.size())]
+
+			for user_selection in reversed(user_selections):
+				matches = self.find(user_selection.a, regex, self.view.substr(user_selection))
+				if matches != None:
+					for matched_region in matches:
+						unix_time_str = self.view.substr(matched_region)
+						time_str = datetime.datetime.fromtimestamp(int(unix_time_str)).strftime(st_settings.get('date_string_format'))
+						self.view.replace(edit, matched_region, time_str)
+
+	# given a starting point, the regex to find and the text to search (haystack),
+	# return a list of regions
+	def find(self, needle_start, needle_regex, haystack):
+		matches = []
+		for match in needle_regex.finditer(haystack):
+			region = sublime.Region(needle_start + match.start(), needle_start + match.start() + len(match.group()))
+			matches.insert(0, region)
+
+		return matches
