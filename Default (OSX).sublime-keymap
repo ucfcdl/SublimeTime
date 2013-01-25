@@ -1,0 +1,4 @@
+[
+	{ "keys": ["control+shift+d"], "command": "unix_time_to_date_str" },
+	{ "keys": ["control+shift+u"], "command": "date_str_to_unix_time" }
+]

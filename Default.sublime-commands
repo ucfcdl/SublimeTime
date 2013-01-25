@@ -1,0 +1,12 @@
+[
+    {
+        "caption": "SublimeTime: Convert All Unix Timestamps to Date Strings",
+        "command": "unix_time_to_date_str",
+        "args": {}
+    },
+    {
+        "caption": "SublimeTime: Convert All Date Strings to Unix Timestamps",
+        "command": "date_str_to_unix_time",
+        "args": {}
+    }
+]
